@@ -19,17 +19,83 @@
 ##  This file contains code written by SevenPico, Inc.
 ## ----------------------------------------------------------------------------
 
-variable "pub_principals" {
-  type    = map(any)
-  default = {}
-}
-
-variable "sub_principals" {
-  type    = map(any)
-  default = {}
-}
+#variable "pub_principals" {
+#  type    = map(any)
+#  default = {}
+#}
+#
+#variable "sub_principals" {
+#  type    = map(any)
+#  default = {}
+#}
 
 variable "kms_master_key_id" {
   type = string
   default = ""
+}
+
+variable "pub_principals" {
+  type = map(object({
+    type        = string
+    identifiers = list(string)
+    condition   = any
+  }))
+  default     = {}
+  description = <<EOF
+The following example input Allows for the specification of Principals as well as Principals with Conditions.
+If no Conditions are needed, the Condition block can be set to null, but that needs to be consistent for each map item
+{
+    RootAccess = {
+      type = "AWS"
+      identifiers = [var.principal_account_id]
+      condition = {
+        test     = null
+        values   = []
+        variable =
+      }
+    },
+    PubConditional = {
+      type = "AWS"
+      identifiers = ["*"]
+      condition = {
+        test     = "ForAnyValue:StringLike"
+        values   = [var.organization_ou_id]
+        variable = "aws:PrincipalOrgPaths"
+      }
+    }
+}
+EOF
+}
+
+variable "sub_principals" {
+  type = map(object({
+    type        = string
+    identifiers = list(string)
+    condition   = any
+  }))
+  default     = {}
+  description = <<EOF
+The following example input Allows for the specification of Principals as well as Principals with Conditions.
+If no Conditions are needed, the Condition block can be set to null, but that needs to be consistent for each map item
+{
+    RootAccess = {
+      type = "AWS"
+      identifiers = [var.principal_account_id]
+      condition = {
+        test     = null
+        values   = []
+        variable =
+      }
+    },
+    PubConditional = {
+      type = "AWS"
+      identifiers = ["*"]
+      condition = {
+        test     = "ForAnyValue:StringLike"
+        values   = [var.organization_ou_id]
+        variable = "aws:PrincipalOrgPaths"
+      }
+    }
+}
+EOF
 }

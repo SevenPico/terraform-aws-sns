@@ -13,6 +13,14 @@
 ##  See the License for the specific language governing permissions and
 ##  limitations under the License.
 ## ----------------------------------------------------------------------------
+locals {
+  sub_principals = {for k,p in var.sub_principals : k=>p if try(p.condition.test, null) == null }
+  sub_principals_with_condition = {for k,p in var.sub_principals : k=>p if try(p.condition.test, null) != null }
+
+  pub_principals = {for k,p in var.pub_principals : k=>p if try(p.condition.test, null) == null }
+  pub_principals_with_condition = {for k,p in var.pub_principals : k=>p if try(p.condition.test, null) != null }
+}
+
 
 ## ----------------------------------------------------------------------------
 ##  ./sns.tf
@@ -69,7 +77,7 @@ data "aws_iam_policy_document" "this" {
     resources = [one(aws_sns_topic.this[*].arn)]
 
     principals {
-      type = "Service"
+      type        = "Service"
       identifiers = [
         "cloudwatch.amazonaws.com",
         "events.amazonaws.com"
@@ -77,25 +85,64 @@ data "aws_iam_policy_document" "this" {
     }
 
     dynamic "principals" {
-      for_each = var.pub_principals
+      for_each = local.pub_principals
       content {
-        type        = principals.key
-        identifiers = principals.value
+        type        = principals.value.type
+        identifiers = principals.value.identifiers
       }
     }
   }
 
   dynamic "statement" {
-    for_each = var.sub_principals
+    for_each = local.pub_principals_with_condition
     content {
-      sid       = "AllowSub"
+      sid       = statement.key
+      effect    = "Allow"
+      actions   = ["SNS:Publish"]
+      resources = [one(aws_sns_topic.this[*].arn)]
+
+      principals {
+        type        = statement.value.type
+        identifiers = statement.value.identifiers
+      }
+      condition {
+        test     = statement.value.condition.test
+        values   = statement.value.condition.values
+        variable = statement.value.condition.variable
+      }
+    }
+  }
+
+  dynamic "statement" {
+    for_each = local.sub_principals
+    content {
       effect    = "Allow"
       actions   = ["SNS:Subscribe"]
       resources = [one(aws_sns_topic.this[*].arn)]
 
       principals {
-        type        = statement.key
-        identifiers = statement.value
+        type        = statement.value.type
+        identifiers = statement.value.identifiers
+      }
+    }
+  }
+
+  dynamic "statement" {
+    for_each = local.sub_principals_with_condition
+    content {
+      sid       = statement.key
+      effect    = "Allow"
+      actions   = ["SNS:Subscribe"]
+      resources = [one(aws_sns_topic.this[*].arn)]
+
+      principals {
+        type        = statement.value.type
+        identifiers = statement.value.identifiers
+      }
+      condition {
+        test     = statement.value.condition.test
+        values   = statement.value.condition.values
+        variable = statement.value.condition.variable
       }
     }
   }
