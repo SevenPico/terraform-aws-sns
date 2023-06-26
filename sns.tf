@@ -28,6 +28,7 @@ locals {
 ## ----------------------------------------------------------------------------
 
 resource "aws_sns_topic" "this" {
+  #checkov:skip=CKV_AWS_26:skipping 'Ensure all data stored in the SNS topic is encrypted' because it can be encrypted through 'var.kms_master_key_id'
   count = module.context.enabled ? 1 : 0
 
   name              = module.context.id
