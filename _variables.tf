@@ -30,7 +30,7 @@
 #}
 
 variable "kms_master_key_id" {
-  type = string
+  type    = string
   default = ""
 }
 
