@@ -14,11 +14,11 @@
 ##  limitations under the License.
 ## ----------------------------------------------------------------------------
 locals {
-  sub_principals                = {for k, p in var.sub_principals : k=>p if try(p.condition.test, null) == null}
-  sub_principals_with_condition = {for k, p in var.sub_principals : k=>p if try(p.condition.test, null) != null}
+  sub_principals                = { for k, p in var.sub_principals : k => p if try(p.condition.test, null) == null }
+  sub_principals_with_condition = { for k, p in var.sub_principals : k => p if try(p.condition.test, null) != null }
 
-  pub_principals                = {for k, p in var.pub_principals : k=>p if try(p.condition.test, null) == null}
-  pub_principals_with_condition = {for k, p in var.pub_principals : k=>p if try(p.condition.test, null) != null}
+  pub_principals                = { for k, p in var.pub_principals : k => p if try(p.condition.test, null) == null }
+  pub_principals_with_condition = { for k, p in var.pub_principals : k => p if try(p.condition.test, null) != null }
 }
 
 
@@ -28,6 +28,7 @@ locals {
 ## ----------------------------------------------------------------------------
 
 resource "aws_sns_topic" "this" {
+  #checkov:skip=CKV_AWS_26:skipping 'Ensure all data stored in the SNS topic is encrypted' because it can be encrypted through 'var.kms_master_key_id'
   count = module.context.enabled ? 1 : 0
 
   name              = module.context.id
@@ -77,7 +78,7 @@ data "aws_iam_policy_document" "this" {
     resources = [one(aws_sns_topic.this[*].arn)]
 
     principals {
-      type        = "Service"
+      type = "Service"
       identifiers = [
         "cloudwatch.amazonaws.com",
         "events.amazonaws.com"
